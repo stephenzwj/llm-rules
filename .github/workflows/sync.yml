@@ -1,0 +1,28 @@
+name: sync
+
+on:
+  schedule:
+    - cron: "17 20 * * *" # 每天 UTC 20:17（北京时间 04:17）
+  workflow_dispatch:
+  push:
+    paths: [custom.yaml, sync.py]
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Sync upstream rules
+        run: ./sync.py
+      - name: Commit if changed
+        run: |
+          if [ -n "$(git status --porcelain llm.yaml llm.list)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add llm.yaml llm.list
+            git commit -m "sync upstream rules"
+            git push
+          fi
